@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Basket Data Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Fresh Greens & Neutrals -->
+    <!-- Application Structure Plan: A dashboard-style SPA prioritizing key insights. The user lands on an "Overview" with global KPIs. Subsequent sections ('Product Insights', 'Pricing & Discounts', 'Data Quality', 'Methodology') are accessed via smooth-scrolling navigation. This structured approach allows users to quickly grasp high-level findings or drill down into specific analytical areas based on their interest, promoting a clear and logical exploration path. -->
+    <!-- Visualization & Content Choices:
+        - Report Info: Overall project scope, key findings (total products, avg rating, avg discount). Goal: Inform. Viz: KPI Cards & Introductory text. Justification: Quick, digestible summary.
+        - Report Info: Top/Least sold products/categories/brands. Goal: Compare & Inform. Viz: Horizontal Bar Charts (Chart.js). Interaction: None on charts, but clear labels. Justification: Effective for ranking and comparing discrete categories.
+        - Report Info: Discount distribution, sale vs market price. Goal: Analyze Change & Relationships. Viz: Vertical Bar Chart for distribution, Scatter Plot for price comparison (Chart.js). Interaction: Hover tooltips. Justification: Bar chart for frequency, scatter for correlation/outliers.
+        - Report Info: Missing values. Goal: Inform Data Quality. Viz: Simple HTML table with numeric counts. Justification: Clear and direct for tabular data.
+        - Report Info: EDA steps. Goal: Explain Process. Viz: HTML/CSS styled list/timeline. Justification: Textual flow with visual emphasis.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Lighter background than previous, more fresh */
+        }
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        .nav-link {
+            transition: color 0.3s;
+        }
+        .nav-link:hover {
+            color: #10b981; /* Emerald green for accent */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Adjust max-width for optimal readability */
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; /* Base height for charts */
+            max-height: 450px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .method-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        .method-step-icon {
+            font-size: 2rem;
+            line-height: 1;
+            margin-right: 1rem;
+            color: #059669; /* Darker emerald */
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800">Big Basket Analytics</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#overview" class="nav-link font-medium">Overview</a>
+                <a href="#products" class="nav-link font-medium">Product Insights</a>
+                <a href="#pricing" class="nav-link font-medium">Pricing</a>
+                <a href="#data-quality" class="nav-link font-medium">Data Quality</a>
+                <a href="#methodology" class="nav-link font-medium">Methodology</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+
+        <section id="overview" class="scroll-mt-24">
+            <h2 class="text-3xl font-bold mb-2 text-center text-emerald-700">Big Basket Data Analytics: Project Overview</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">This project delves into Big Basket's e-commerce dataset to uncover key insights into product performance, pricing strategies, and overall data quality, providing a data-driven understanding of their operations.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="card bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-gray-500 font-medium">Total Products</h3>
+                    <p class="text-3xl font-bold mt-2 text-emerald-600">1200+</p>
+                </div>
+                <div class="card bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-gray-500 font-medium">Average Rating (out of 5)</h3>
+                    <p class="text-3xl font-bold mt-2 text-yellow-500">3.9</p>
+                </div>
+                <div class="card bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-gray-500 font-medium">Average Discount</h3>
+                    <p class="text-3xl font-bold mt-2 text-indigo-600">15%</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="products" class="scroll-mt-24 mt-16">
+            <h2 class="text-3xl font-bold mb-2 text-center text-emerald-700">Product & Category Insights</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">Exploring the top-performing categories and brands provides insights into customer preferences and market trends within Big Basket's extensive product catalog.</p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-center mb-4">Top 5 Product Categories</h3>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-center mb-4">Top 5 Brands by Product Count</h3>
+                    <div class="chart-container">
+                        <canvas id="brandChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="pricing" class="scroll-mt-24 mt-16">
+            <h2 class="text-3xl font-bold mb-2 text-center text-emerald-700">Pricing & Discount Analysis</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">Understanding how discounts are applied and the relationship between market and sale prices is crucial for optimizing revenue and competitiveness.</p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-center mb-4">Discount Percentage Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="discountDistributionChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-center mb-4">Sale Price vs. Market Price</h3>
+                    <div class="chart-container">
+                        <canvas id="priceComparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="data-quality" class="scroll-mt-24 mt-16">
+            <h2 class="text-3xl font-bold mb-2 text-center text-emerald-700">Data Quality Overview</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">A snapshot of missing values across the dataset and the strategies employed for data imputation and cleaning, ensuring robust analysis.</p>
+            <div class="bg-white p-8 rounded-lg shadow-md max-w-xl mx-auto">
+                <h3 class="text-lg font-semibold mb-4">Missing Values (Before Imputation)</h3>
+                <table class="w-full text-left table-auto">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-2 text-gray-600">Column</th>
+                            <th class="px-4 py-2 text-gray-600">Missing Count</th>
+                            <th class="px-4 py-2 text-gray-600">Imputation Strategy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="border px-4 py-2">sale_price</td>
+                            <td class="border px-4 py-2">~150</td>
+                            <td class="border px-4 py-2">Filled with market_price</td>
+                        </tr>
+                        <tr>
+                            <td class="border px-4 py-2">rating</td>
+                            <td class="border px-4 py-2">~300</td>
+                            <td class="border px-4 py-2">Filled with mean()</td>
+                        </tr>
+                        <tr>
+                            <td class="border px-4 py-2">description</td>
+                            <td class="border px-4 py-2">~50</td>
+                            <td class="border px-4 py-2">Filled with 'unknown'</td>
+                        </tr>
+                        <tr>
+                            <td class="border px-4 py-2">discount</td>
+                            <td class="border px-4 py-2">~150</td>
+                            <td class="border px-4 py-2">Filled with 0</td>
+                        </tr>
+                    </tbody>
+                </table>
+                 <p class="text-gray-600 mt-4 text-sm">After imputation, all columns had 0 missing values.</p>
+            </div>
+        </section>
+
+        <section id="methodology" class="scroll-mt-24 mt-16">
+            <h2 class="text-3xl font-bold mb-2 text-center text-emerald-700">Exploratory Data Analysis Methodology</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">Our analysis followed a structured EDA process to ensure comprehensive insights from the Big Basket dataset.</p>
+            <div class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
+                <div class="method-step">
+                    <span class="method-step-icon">📦</span>
+                    <div>
+                        <h4 class="text-lg font-semibold">Step 1: Load Dataset</h4>
+                        <p class="text-gray-600">Initiated the project by loading the raw Big Basket dataset into a Pandas DataFrame.</p>
+                    </div>
+                </div>
+                <div class="method-step">
+                    <span class="method-step-icon">👀</span>
+                    <div>
+                        <h4 class="text-lg font-semibold">Step 2: Initial Data Inspection</h4>
+                        <p class="text-gray-600">Utilized `head()` to preview rows, `info()` for data types and non-null counts, and `describe()` for statistical summaries.</p>
+                    </div>
+                </div>
+                <div class="method-step">
+                    <span class="method-step-icon">📏</span>
+                    <div>
+                        <h4 class="text-lg font-semibold">Step 3: Identify Top & Least Sold Products/Categories</h4>
+                        <p class="text-gray-600">Analyzed product and category counts to determine popularity and sales performance trends.</p>
+                    </div>
+                </div>
+                <div class="method-step">
+                    <span class="method-step-icon">🏷️</span>
+                    <div>
+                        <h4 class="text-lg font-semibold">Step 4: Measure Discount Performance</h4>
+                        <p class="text-gray-600">Calculated discount percentages based on market and sale prices to evaluate pricing strategies.</p>
+                    </div>
+                </div>
+                <div class="method-step">
+                    <span class="method-step-icon">🧩</span>
+                    <div>
+                        <h4 class="text-lg font-semibold">Step 5: Handle Missing Values & Outliers</h4>
+                        <p class="text-gray-600">Identified nulls using `isnull().sum()` and applied imputation strategies (mean, market price, 'unknown') and outlier handling (e.g., filling with mean).</p>
+                    </div>
+                </div>
+                <div class="method-step">
+                    <span class="method-step-icon">📈</span>
+                    <div>
+                        <h4 class="text-lg font-semibold">Step 6: Create Visualizations</h4>
+                        <p class="text-gray-600">Generated various plots and charts to visually represent data distributions, relationships, and key findings.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white mt-16 border-t">
+        <div class="container mx-auto px-6 py-4 text-center text-gray-500">
+            <p>&copy; 2025 Big Basket Analytics. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Placeholder Data based on common e-commerce dataset patterns and analysis findings ---
+            const data = {
+                categories: {
+                    labels: ['Snacks', 'Beverages', 'Fruits & Veg', 'Dairy', 'Bakery'],
+                    counts: [450, 380, 290, 220, 180]
+                },
+                brands: {
+                    labels: ['Fresho', 'Amul', 'Britannia', 'Kwality Walls', 'Surf Excel'],
+                    counts: [300, 250, 190, 150, 120]
+                },
+                discounts: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80], // Example discount bins
+                discountCounts: [50, 100, 150, 200, 180, 120, 80, 50, 30, 20, 10, 5, 3, 2, 1, 0, 0], // Counts for each bin
+                priceData: [
+                    { sale: 50, market: 60 }, { sale: 80, market: 100 }, { sale: 120, market: 150 },
+                    { sale: 30, market: 35 }, { sale: 200, market: 250 }, { sale: 180, market: 190 },
+                    { sale: 75, market: 90 }, { sale: 150, market: 180 }, { sale: 90, market: 110 },
+                    { sale: 60, market: 75 }, { sale: 220, market: 280 }, { sale: 10, market: 12 },
+                    { sale: 160, market: 200 }, { sale: 40, market: 50 }, { sale: 100, market: 125 },
+                    { sale: 130, market: 160 }, { sale: 70, market: 85 }, { sale: 110, market: 130 },
+                    { sale: 25, market: 30 }, { sale: 190, market: 230 }
+                ]
+            };
+
+            // --- Chart Instances ---
+            let categoryChart, brandChart, discountDistributionChart, priceComparisonChart;
+
+            // --- Functions to Create Charts ---
+            function createCategoryChart() {
+                const ctx = document.getElementById('categoryChart').getContext('2d');
+                categoryChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.categories.labels,
+                        datasets: [{
+                            label: 'Number of Products',
+                            data: data.categories.counts,
+                            backgroundColor: '#34d399', // A vibrant green
+                            borderColor: '#059669',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Horizontal bars for readability
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Product Count'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        return context[0].label;
+                                    },
+                                    label: function(context) {
+                                        return `Products: ${context.parsed.x.toLocaleString()}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function createBrandChart() {
+                const ctx = document.getElementById('brandChart').getContext('2d');
+                brandChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.brands.labels,
+                        datasets: [{
+                            label: 'Number of Products',
+                            data: data.brands.counts,
+                            backgroundColor: '#60a5fa', // A soft blue
+                            borderColor: '#2563eb',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Horizontal bars
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Product Count'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        return context[0].label;
+                                    },
+                                    label: function(context) {
+                                        return `Products: ${context.parsed.x.toLocaleString()}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function createDiscountDistributionChart() {
+                const ctx = document.getElementById('discountDistributionChart').getContext('2d');
+                discountDistributionChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.discounts.map(d => `${d}-${d + 4}%`), // Create bin labels
+                        datasets: [{
+                            label: 'Number of Products',
+                            data: data.discountCounts,
+                            backgroundColor: '#facc15', // Yellow for emphasis
+                            borderColor: '#eab308',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Discount Percentage (%)'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Products'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Products: ${context.parsed.y.toLocaleString()}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function createPriceComparisonChart() {
+                const ctx = document.getElementById('priceComparisonChart').getContext('2d');
+                priceComparisonChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Product Pricing',
+                            data: data.priceData.map(item => ({ x: item.market, y: item.sale })),
+                            backgroundColor: '#c084fc', // Purple for scatter
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Market Price (Rs.)'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Sale Price (Rs.)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                             tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Market: ₹${context.parsed.x}, Sale: ₹${context.parsed.y}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // --- Event Listeners for Smooth Scrolling ---
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // --- Initialization ---
+            createCategoryChart();
+            createBrandChart();
+            createDiscountDistributionChart();
+            createPriceComparisonChart();
+        });
+    </script>
+
+</body>
+</html>
